@@ -1,0 +1,7 @@
+service_key = 'ccb57fc4ccb57fc4ccb57fc40eccc92332cccb5ccb57fc4aedc619b6f144e5159db7ad4'
+client_secret = 'RSaoyjKN6RsvWjlZJQAg'
+app_id = '8150262'
+redirect_uri = 'http://localhost/callback'
+scope = 'photos,wall,groups,offline'
+base_url = 'https://api.vk.com/method/'
+token_vkinder = 'c52d208abb9692988e7803727227d215b5322bec452ae6d4996404108a9498041b140a4766f86529fb140'
