@@ -105,25 +105,25 @@ class VkApi:
         }
         responce = requests.get(url=endpoint, params={**params, **self.params})
         return responce.json()
+    '''ПЕРЕПИСАТЬ ЛОГИКУ'''
+    # def __max_size_foto_filter(self, photos):
+    #     result = {}
+    #     logs_file = []
+    #     for foto in photos.json()['response']['items']:
+    #         max_size_photo = foto['sizes'][-1]
+    #         current_time = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(foto['date']))
+    #
+    #         if f"{foto['likes']['count']}.jpg" in result:
+    #             result.update({f"{foto['likes']['count']} {current_time}.jpg": max_size_photo})
+    #             logs_file.extend([{'file_name': f"{foto['likes']['count']} {current_time}.jpg",
+    #                                'size': f"{max_size_photo['height']}x{max_size_photo['width']}"}])
+    #         else:
+    #             result.update({f"{foto['likes']['count']}.jpg": max_size_photo})
+    #             logs_file.extend([{'file_name': f"{foto['likes']['count']}.jpg",
+    #                                'size': f"{max_size_photo['height']}x{max_size_photo['width']}"}])
+    #     return result, logs_file
 
-    def __max_size_foto_filter(self, photos):
-        result = {}
-        logs_file = []
-        for foto in photos.json()['response']['items']:
-            max_size_photo = foto['sizes'][-1]
-            current_time = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(foto['date']))
-
-            if f"{foto['likes']['count']}.jpg" in result:
-                result.update({f"{foto['likes']['count']} {current_time}.jpg": max_size_photo})
-                logs_file.extend([{'file_name': f"{foto['likes']['count']} {current_time}.jpg",
-                                   'size': f"{max_size_photo['height']}x{max_size_photo['width']}"}])
-            else:
-                result.update({f"{foto['likes']['count']}.jpg": max_size_photo})
-                logs_file.extend([{'file_name': f"{foto['likes']['count']}.jpg",
-                                   'size': f"{max_size_photo['height']}x{max_size_photo['width']}"}])
-        return result, logs_file
-
-    def get_photos_from_profile(self, user_id=8487111, album_id='profile'):
+    def get_photos_from_profile(self, user_id=10900942, album_id='profile'):
         endpoint = f'{config.base_url}photos.get'
         params = {
             'owner_id': user_id,
@@ -135,9 +135,9 @@ class VkApi:
         time.sleep(0.33)
         if response.status_code == 200:
             print(f'Список фотографий со профиля id{user_id} получен')
-        print(response.json())
-        return self.__max_size_foto_filter(response)
-
+        pprint.pprint(response.json()['response']['items'])
+        # return self.__max_size_foto_filter(response)
+        return  response.json()
 
 def main():
     user_id = 'yarowoe'
@@ -145,7 +145,7 @@ def main():
     # user_sex = int(input('Введите пол, 1 — Женщина; 2 — Мужчина; 0 — Любой: '))
     # age = int(input('Введите возраст: '))
     vk_1 = VkApi()
-    print(vk_1.get_photos_from_profile())
+    vk_1.get_photos_from_profile()
     # pprint.pprint(vk_1.get_users('Новосибирск', 1, 25))
     # sleep(5)
     # print()
