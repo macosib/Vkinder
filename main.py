@@ -120,14 +120,14 @@ class VkApi:
         except:
             print('Ошибка при поиске пользователей')
 
-    # def get_user_info(self, user_id):
-    #     endpoint = f'{config.base_url}users.get'
-    #     params = {
-    #         'user_ids': user_id,
-    #         'fields': 'bdate, sex, city, relation'
-    #     }
-    #     response = requests.get(url=endpoint, params={**params, **self.params})
-    #     return response.json()
+    def get_user_info(self, user_id):
+        endpoint = f'{config.base_url}users.get'
+        params = {
+            'user_ids': user_id,
+            'fields': 'bdate, sex, city, relation'
+        }
+        response = requests.get(url=endpoint, params={**params, **self.params})
+        return response.json()
 
     def _max_size_foto_filter(self, photos):
         result = []
