@@ -28,11 +28,11 @@ class VkApi:
             'v': '5.131'
         }
         try:
-            responce = requests.get(url=endpoint, params=params)
-            responce.raise_for_status()
-            if responce.status_code != 200:
-                raise Exception('Ошибка при получени кода')
-            webbrowser.open(responce.url)
+            response = requests.get(url=endpoint, params=params)
+            response.raise_for_status()
+            if response.status_code != 200:
+                raise Exception()
+            webbrowser.open(response.url)
             code = input('Введите код с браузера: ').split('code=')[1]
             return code
         except:
@@ -47,13 +47,13 @@ class VkApi:
             'code': self._access_code()
         }
         try:
-            responce = requests.get(url=endpoint, params=params)
-            responce.raise_for_status()
-            if responce.status_code != 200:
-                raise Exception('Ошибка при получении токена')
+            response = requests.get(url=endpoint, params=params)
+            response.raise_for_status()
+            if response.status_code != 200:
+                raise Exception()
             with open('token.txt', 'w', encoding='utf-8') as file:
-                file.write(responce.json()['access_token'])
-            return responce.json()['access_token']
+                file.write(response.json()['access_token'])
+            return response.json()['access_token']
         except:
             print('Ошибка при получении токена')
 
@@ -79,10 +79,26 @@ class VkApi:
             'q': city_name,
             'count': 1
         }
-        responce = requests.get(url=endpoint, params={**params, **self.params})
-        return responce.json()['response']['items'][0]['id']
+        response = requests.get(url=endpoint, params={**params, **self.params})
+        return response.json()['response']['items'][0]['id']
 
-    def get_users(self, city='Новосибирск', sex=1, age=30, count=100):
+    def users_search_res(self, search_result):
+        result = []
+        for person in search_result['response']['items']:
+            result.append({
+                'first_name': person.get('first_name'),
+                'last_name': person.get('last_name'),
+                'person_id': person.get('id'),
+                'city_id': person.get('city').get('id'),
+                'city_title': person.get('city').get('title'),
+                'sex': person.get('sex'),
+                'bdate': person.get('bdate'),
+                'profile_foto': self.get_photos_from_profile(person.get('id'))
+            })
+        return result
+
+
+    def users_search(self, city='Новосибирск', sex=1, age=30, count=100):
         endpoint = f'{config.base_url}users.search'
         params = {
             'offset': self.offset,
@@ -91,53 +107,55 @@ class VkApi:
             'sex': sex,
             'age_from': age,
             'age_to': age,
-            'has_photo': 1
+            'has_photo': 1,
+            'fields': 'sex, bdate, city'
         }
-        responce = requests.get(url=endpoint, params={**params, **self.params})
-        self.offset += 100
-        return responce.json()
+        try:
+            response = requests.get(url=endpoint, params={**params, **self.params})
+            response.raise_for_status()
+            if response.status_code != 200:
+                raise Exception()
+            self.offset += 100
+            return self.users_search_res(response.json())
+        except:
+            print('Ошибка при поиске пользователей')
 
-    def get_user_info(self, user_id):
-        endpoint = f'{config.base_url}users.get'
-        params = {
-            'user_ids': user_id,
-            'fields': 'bdate,sex,city,relation'
-        }
-        responce = requests.get(url=endpoint, params={**params, **self.params})
-        return responce.json()
-    '''ПЕРЕПИСАТЬ ЛОГИКУ'''
-    # def __max_size_foto_filter(self, photos):
-    #     result = {}
-    #     logs_file = []
-    #     for foto in photos.json()['response']['items']:
-    #         max_size_photo = foto['sizes'][-1]
-    #         current_time = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(foto['date']))
-    #
-    #         if f"{foto['likes']['count']}.jpg" in result:
-    #             result.update({f"{foto['likes']['count']} {current_time}.jpg": max_size_photo})
-    #             logs_file.extend([{'file_name': f"{foto['likes']['count']} {current_time}.jpg",
-    #                                'size': f"{max_size_photo['height']}x{max_size_photo['width']}"}])
-    #         else:
-    #             result.update({f"{foto['likes']['count']}.jpg": max_size_photo})
-    #             logs_file.extend([{'file_name': f"{foto['likes']['count']}.jpg",
-    #                                'size': f"{max_size_photo['height']}x{max_size_photo['width']}"}])
-    #     return result, logs_file
+    # def get_user_info(self, user_id):
+    #     endpoint = f'{config.base_url}users.get'
+    #     params = {
+    #         'user_ids': user_id,
+    #         'fields': 'bdate, sex, city, relation'
+    #     }
+    #     response = requests.get(url=endpoint, params={**params, **self.params})
+    #     return response.json()
 
-    def get_photos_from_profile(self, user_id=10900942, album_id='profile'):
+    def _max_size_foto_filter(self, photos):
+        result = []
+        for foto in sorted(photos.json()['response']['items'], key=lambda x: x['likes']['count'], reverse=True):
+            result.append({'id': foto['id'],
+                           'likes': foto['likes']['count'],
+                           'url': foto['sizes'][-1]['url']})
+            if len(result) == 3:
+                break
+        return result
+
+    def get_photos_from_profile(self, user_id):
+        sleep(0.33)
         endpoint = f'{config.base_url}photos.get'
         params = {
             'owner_id': user_id,
-            'album_id': album_id,
+            'album_id': 'profile',
             'extended': 1,
         }
-        response = requests.get(endpoint, params={**self.params, **self.params, **params})
-        response.raise_for_status()
-        time.sleep(0.33)
-        if response.status_code == 200:
-            print(f'Список фотографий со профиля id{user_id} получен')
-        pprint.pprint(response.json()['response']['items'])
-        # return self.__max_size_foto_filter(response)
-        return  response.json()
+        try:
+            response = requests.get(endpoint, params={**self.params, **self.params, **params})
+            response.raise_for_status()
+            if response.status_code != 200:
+                raise Exception()
+            return self._max_size_foto_filter(response)
+        except:
+            print(f'Ошибка при получении фото профиля {user_id}')
+
 
 def main():
     user_id = 'yarowoe'
@@ -145,8 +163,8 @@ def main():
     # user_sex = int(input('Введите пол, 1 — Женщина; 2 — Мужчина; 0 — Любой: '))
     # age = int(input('Введите возраст: '))
     vk_1 = VkApi()
-    vk_1.get_photos_from_profile()
-    # pprint.pprint(vk_1.get_users('Новосибирск', 1, 25))
+    # print(*vk_1.get_photos_from_profile(8487111), sep='\n')
+    pprint.pprint(vk_1.users_search('Новосибирск', 1, 30, 10))
     # sleep(5)
     # print()
     # print()
