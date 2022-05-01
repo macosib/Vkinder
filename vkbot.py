@@ -1,7 +1,6 @@
-from random import randrange
 import vk_api
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
-from vk_api.longpoll import VkLongPoll, VkEventType
+from vk_api.longpoll import VkLongPoll
 import config
 from vk_api.utils import get_random_id
 
@@ -33,27 +32,3 @@ class VKBot:
         keyboard.add_button('Показать список избранных', color=VkKeyboardColor.SECONDARY)
         return keyboard.get_keyboard()
 
-
-def main():
-    vk_bot = VKBot()
-
-    for event in vk_bot.longpoll.listen():
-        if event.type == VkEventType.MESSAGE_NEW:
-            if event.to_me:
-                message = event.text.lower()
-                if message == "привет":
-                    vk_bot.send_msg(event.user_id, f"Привет, {event.user_id}")
-                elif message == "показать список избранных":
-                    vk_bot.send_msg(event.user_id, f"Показываю избранных")
-                elif message == "добавить в избранное":
-                    vk_bot.send_msg(event.user_id, f"Добавил в избраннное")
-                elif message == "не нравится":
-                    vk_bot.send_msg(event.user_id, "Ну и ладно, поищем других")
-                elif message == "показать далее":
-                    vk_bot.send_msg(event.user_id, "Как скажешь босс")
-                else:
-                    vk_bot.send_msg(event.user_id, "Такой команды я не знаю")
-
-
-if __name__ == '__main__':
-    main()
