@@ -14,12 +14,13 @@ class VKBot:
         self.longpoll = VkLongPoll(self.vk_session)
         self.keyboard = self.current_keyboard()
 
-    def send_msg(self, user_id, message):
+    def send_msg(self, user_id, message, attachment=None):
         self.vk_session.method('messages.send',
                                {'user_id': user_id,
                                 'message': message,
                                 'random_id': get_random_id(),
-                                'keyboard': self.keyboard})
+                                'keyboard': self.keyboard,
+                               'attachment':attachment})
 
     @staticmethod
     def current_keyboard():

@@ -2,17 +2,19 @@ from time import sleep
 import requests
 import config
 import webbrowser
+from random import randint
 
 
 class VkApi:
 
     def __init__(self):
         self.token = self._check_valid_token()
+        # self.token = config.token_vkinder
         self.params = {
             'access_token': self.token,
             'v': '5.131'
         }
-        self.offset = 0
+        self.offset = 30
 
     def _access_code(self):
         endpoint = 'https://oauth.vk.com/authorize'
@@ -77,44 +79,47 @@ class VkApi:
             'count': 1
         }
         response = requests.get(url=endpoint, params={**params, **self.params})
+        print(response.json())
+        sleep(0.33)
         return response.json()['response']['items'][0]['id']
 
-    def users_search_res(self, search_result):
+    def users_search_res(self, search_result, city):
         result = []
         for person in search_result['response']['items']:
-            print(person)
+            if person['is_closed'] is True \
+                    or person.get('city') is None\
+                    or person.get('city').get('title') != city:
+                continue
             result.append({
                 'first_name': person.get('first_name'),
                 'last_name': person.get('last_name'),
                 'person_id': person.get('id'),
-                'city_id': person.get('city').get('id'),
-                'city_title': person.get('city').get('title'),
+                'city_title': person.get('home_town'),
                 'sex': person.get('sex'),
                 'bdate': person.get('bdate'),
                 'profile_foto': self.get_photos_from_profile(person.get('id'))
             })
-        print(result)
         return result
 
-    def users_search(self, city='Новосибирск', sex=1, age=30, count=100):
+    def users_search(self, city, sex, birth_year, count=1):
         endpoint = f'{config.base_url}users.search'
         params = {
             'offset': self.offset,
             'count': count,
             'city': self._get_city_id(city),
             'sex': sex,
-            'age_from': age,
-            'age_to': age,
+            'birth_year': birth_year,
             'has_photo': 1,
             'fields': 'sex, bdate, city'
         }
+
         try:
             response = requests.get(url=endpoint, params={**params, **self.params})
             response.raise_for_status()
             if response.status_code != 200:
                 raise Exception()
-            self.offset += 100
-            return self.users_search_res(response.json())
+            self.offset += count
+            return self.users_search_res(response.json(), city)
         except:
             print('Ошибка при поиске пользователей')
 
@@ -122,15 +127,29 @@ class VkApi:
         endpoint = f'{config.base_url}users.get'
         params = {
             'user_ids': user_id,
-            'fields': 'bdate, sex, relation, home_town'
+            'fields': 'bdate, sex, home_town'
         }
         response = requests.get(url=endpoint, params={**params, **self.params})
-        return response.json()['response'][0]
+        data = response.json()['response'][0]
+        if data.get('home_town', None) is None:
+            city = 'Москва'
+        else:
+            city = data.get('home_town')
+        if data.get('bdate', None) is None or len(data.get('bdate').split('.')) < 3:
+            bdate = randint(1980, 2000)
+        else:
+            bdate = int(data.get('bdate').split('.')[2])
+        if data.get('sex', None) is None:
+            sex = randint(0, 2)
+        else:
+            sex = data.get('sex')
+        return city, sex, bdate
 
     def _max_size_foto_filter(self, photos):
         result = []
         for foto in sorted(photos.json()['response']['items'], key=lambda x: x['likes']['count'], reverse=True):
-            result.append({'id': foto['id'],
+            result.append({'foto_id': foto['id'],
+                           'owner_id': foto['owner_id'],
                            'likes': foto['likes']['count'],
                            'url': foto['sizes'][-1]['url']})
             if len(result) == 3:
@@ -153,3 +172,4 @@ class VkApi:
             return self._max_size_foto_filter(response)
         except:
             print(f'Ошибка при получении фото профиля {user_id}')
+            return
