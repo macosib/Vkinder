@@ -24,6 +24,9 @@ connection = engine.connect()
 
 # creating a table for a bot user
 class BotUser(Base):
+    """
+
+    """
     __tablename__ = "bot_user"
     id_bot_user = sql.Column(sql.Integer, primary_key=True, autoincrement=True, nullable=False)
     bot_user_vk_id = sql.Column(sql.Integer, unique=True, nullable=False)
@@ -31,6 +34,9 @@ class BotUser(Base):
 
 # creating a table for a match user
 class FavoriteUser(Base):
+    """
+
+    """
     __tablename__ = 'favorites_list'
     id_favorites = sql.Column(sql.Integer, primary_key=True, autoincrement=True, nullable=False)
     vk_user_id = sql.Column(sql.Integer, unique=True, nullable=False)
@@ -44,6 +50,9 @@ class FavoriteUser(Base):
 
 # creating a table for a blacklisted accounts
 class BlackList(Base):
+    """
+
+    """
     __tablename__ = 'black_list'
     id_black_list = sql.Column(sql.Integer, primary_key=True, autoincrement=True, nullable=False)
     vk_user_id = sql.Column(sql.Integer, unique=True, nullable=False)
@@ -57,6 +66,9 @@ class BlackList(Base):
 
 # creating a table for a photo information
 class VkUserPhoto(Base):
+    """
+
+    """
     __tablename__ = 'vk_user_photo'
     id_photo = sql.Column(sql.Integer, primary_key=True, autoincrement=True, nullable=False)
     photo_likes_count = sql.Column(sql.Integer, unique=False)
@@ -71,6 +83,11 @@ Creating a functions to work with database
 
 # adds new bot user
 def add_bot_user(id_vk):
+    """
+    Adds new bot user to database 'vKinder_bot_db'
+    :param id_vk: int
+    :return: Boolean
+    """
     new_entry = BotUser(
         bot_user_vk_id=id_vk
     )
@@ -81,12 +98,28 @@ def add_bot_user(id_vk):
 
 # checks if bot user already in database
 def check_if_bot_user_exists(id_vk):
+    """
+    Checks if bot user already exists in database 'vKinder_bot_db'
+    :param id_vk: int
+    :return: Boolean
+    """
     new_entry = session.query(BotUser).filter_by(bot_user_vk_id=id_vk).first()
     return new_entry
 
 
 # adds new match to favorites list
 def add_new_match_to_favorites(vk_user_id, first_name, last_name, city, bdate, sex, id_bot_user):
+    """
+    Adds new match to favorites list in accordance with user's request
+    :param vk_user_id: int
+    :param first_name: str
+    :param last_name: str
+    :param city: str
+    :param bdate: str
+    :param sex: str
+    :param id_bot_user: int
+    :return: Boolean
+    """
     new_entry = FavoriteUser(
         vk_user_id=vk_user_id,
         vk_user_first_name=first_name,
@@ -103,6 +136,17 @@ def add_new_match_to_favorites(vk_user_id, first_name, last_name, city, bdate, s
 
 # adds new match to black list
 def add_new_match_to_black_list(vk_user_id, first_name, last_name, city, bdate, sex, id_bot_user):
+    """
+    Adds new match to black list in accordance with user's request
+    :param vk_user_id: int
+    :param first_name: str
+    :param last_name: str
+    :param city: str
+    :param bdate: str
+    :param sex: str
+    :param id_bot_user: int
+    :return: Boolean
+    """
     new_entry = FavoriteUser(
         vk_user_id=vk_user_id,
         vk_user_first_name=first_name,
@@ -119,6 +163,11 @@ def add_new_match_to_black_list(vk_user_id, first_name, last_name, city, bdate, 
 
 # deletes match from black list
 def delete_match_from_black_list(vk_id):
+    """
+    Deletes match from black list
+    :param vk_id: int
+    :return: Boolean
+    """
     new_entry = session.query(BlackList).filter_by(vk_user_id=vk_id).first()
     session.delete(new_entry)
     session.commit()
@@ -126,6 +175,11 @@ def delete_match_from_black_list(vk_id):
 
 # deletes match from favorites list
 def delete_match_from_favorites_list(vk_id):
+    """
+    Deletes match from favorites list
+    :param vk_id: int
+    :return: Boolean
+    """
     new_entry = session.query(FavoriteUser).filter_by(vk_user_id=vk_id).first()
     session.delete(new_entry)
     session.commit()
@@ -133,6 +187,11 @@ def delete_match_from_favorites_list(vk_id):
 
 # checks if match already present in database (both black and favorites list)
 def check_if_match_exists(id_vk):
+    """
+    Checks if match already present in database (both black and favorites list)
+    :param id_vk: int
+    :return: Boolean
+    """
     favorite_list = session.query(FavoriteUser).filter_by(vk_user_id=id_vk).first()
     black_list = session.query(BlackList).filter_by(vk_user_id=id_vk).first()
     return favorite_list, black_list
@@ -140,6 +199,13 @@ def check_if_match_exists(id_vk):
 
 # adds photo of the match to photo table
 def add_photo_of_the_match(photo_likes_count, photo_url, vk_user_id):
+    """
+
+    :param photo_likes_count:
+    :param photo_url:
+    :param vk_user_id:
+    :return:
+    """
     new_entry = VkUserPhoto(
         photo_likes_count=photo_likes_count,
         photo_URL=photo_url,
@@ -152,6 +218,11 @@ def add_photo_of_the_match(photo_likes_count, photo_url, vk_user_id):
 
 # shows all favorite users of current bot user
 def show_all_favorites(id_):
+    """
+
+    :param id_:
+    :return:
+    """
     bot_user = session.query(BotUser).filter_by(bot_user_vk_id=id_).first()
     all_favorites = session.query(FavoriteUser).filter_by(id_bot_user=bot_user.id_bot_user).all()
     return all_favorites
@@ -159,6 +230,11 @@ def show_all_favorites(id_):
 
 # shows all blacklisted users of current bot user
 def show_all_blacklisted(id_):
+    """
+
+    :param id_:
+    :return:
+    """
     bot_user = session.query(BotUser).filter_by(bot_user_vk_id=id_).first()
     all_blacklisted = session.query(BlackList).filter_by(id_bot_user=bot_user.id_bot_user).all()
     return all_blacklisted
