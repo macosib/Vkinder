@@ -14,9 +14,10 @@ class VkApi:
             'access_token': self.token,
             'v': '5.131'
         }
-        self.offset = 30
+        self.offset = 0
 
-    def _access_code(self):
+    @staticmethod
+    def _access_code():
         endpoint = 'https://oauth.vk.com/authorize'
         params = {
             'client_id': config.app_id,
@@ -36,6 +37,7 @@ class VkApi:
             return code
         except:
             print('Ошибка при получении кода')
+            return
 
     def _access_token(self):
         endpoint = 'https://oauth.vk.com/access_token'
@@ -71,57 +73,57 @@ class VkApi:
         else:
             return self._access_token()
 
-    def _get_city_id(self, city_name):
-        endpoint = f'{config.base_url}database.getCities'
-        params = {
-            'country_id': '1',
-            'q': city_name,
-            'count': 1
-        }
-        response = requests.get(url=endpoint, params={**params, **self.params})
-        print(response.json())
-        sleep(0.33)
-        return response.json()['response']['items'][0]['id']
-
-    def users_search_res(self, search_result, city):
-        result = []
-        for person in search_result['response']['items']:
-            if person['is_closed'] is True \
-                    or person.get('city') is None\
-                    or person.get('city').get('title') != city:
-                continue
-            result.append({
-                'first_name': person.get('first_name'),
-                'last_name': person.get('last_name'),
-                'person_id': person.get('id'),
-                'city_title': person.get('home_town'),
-                'sex': person.get('sex'),
-                'bdate': person.get('bdate'),
-                'profile_foto': self.get_photos_from_profile(person.get('id'))
-            })
-        return result
-
-    def users_search(self, city, sex, birth_year, count=1):
+    def search_user(self, city, sex, birth_year, count=1):
+        self.offset += count
+        match_person = []
         endpoint = f'{config.base_url}users.search'
         params = {
-            'offset': self.offset,
             'count': count,
-            'city': self._get_city_id(city),
             'sex': sex,
             'birth_year': birth_year,
             'has_photo': 1,
-            'fields': 'sex, bdate, city'
+            'hometown': city,
+            'offset': self.offset
         }
+        response = requests.get(url=endpoint, params={**params, **self.params})
+        result = response.json()['response']['items']
+        for person in result:
+            if person['is_closed'] is True:
+                continue
+            photo_profile = self.get_photos_from_profile(person['id'])
+            match_info = [
+                person['first_name'],
+                person['last_name'],
+                f'{config.base_profile_url}{person["id"]}',
+                photo_profile
+            ]
+            match_person.append(match_info)
+        return match_person
 
-        try:
-            response = requests.get(url=endpoint, params={**params, **self.params})
-            response.raise_for_status()
-            if response.status_code != 200:
-                raise Exception()
-            self.offset += count
-            return self.users_search_res(response.json(), city)
-        except:
-            print('Ошибка при поиске пользователей')
+    # def search_user(self, city, sex, birth_year, count=1):
+    #     print(city, birth_year, sex)
+    #     endpoint = f'{config.base_url}users.search'
+    #     params = {
+    #         'count': count,
+    #         'sex': sex,
+    #         'birth_year': birth_year,
+    #         'has_photo': 1,
+    #         'hometown': city,
+    #         'offset': self.offset
+    #     }
+    #     while True:
+    #         print(self.offset)
+    #         self.offset += count
+    #         response = requests.get(url=endpoint, params={**params, **self.params})
+    #         print(response.json())
+    #         sleep(0.33)
+    #         person = response.json()['response']['items'][0]
+    #         print(person)
+    #         if person['is_closed'] is True:
+    #             continue
+    #         photo_profile = self.get_photos_from_profile(person['id'])
+    #         return person['first_name'], person['last_name'], f'{config.base_profile_url}{person["id"]}', photo_profile
+
 
     def get_user_info(self, user_id):
         endpoint = f'{config.base_url}users.get'
@@ -145,19 +147,9 @@ class VkApi:
             sex = data.get('sex')
         return city, sex, bdate
 
-    def _max_size_foto_filter(self, photos):
-        result = []
-        for foto in sorted(photos.json()['response']['items'], key=lambda x: x['likes']['count'], reverse=True):
-            result.append({'foto_id': foto['id'],
-                           'owner_id': foto['owner_id'],
-                           'likes': foto['likes']['count'],
-                           'url': foto['sizes'][-1]['url']})
-            if len(result) == 3:
-                break
-        return result
-
     def get_photos_from_profile(self, user_id):
         sleep(0.33)
+        result = []
         endpoint = f'{config.base_url}photos.get'
         params = {
             'owner_id': user_id,
@@ -169,7 +161,10 @@ class VkApi:
             response.raise_for_status()
             if response.status_code != 200:
                 raise Exception()
-            return self._max_size_foto_filter(response)
+            for foto in sorted(response.json()['response']['items'], key=lambda x: x['likes']['count'], reverse=True):
+                result.append(f"photo{foto['owner_id']}_{foto['id']}")
+                if len(result) == 3:
+                    break
+            return ','.join(result)
         except:
             print(f'Ошибка при получении фото профиля {user_id}')
-            return
