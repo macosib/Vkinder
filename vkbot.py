@@ -5,7 +5,6 @@ import config
 from vk_api.utils import get_random_id
 
 
-
 class VKBot:
 
     def __init__(self):
@@ -20,16 +19,16 @@ class VKBot:
                                 'message': message,
                                 'random_id': get_random_id(),
                                 'keyboard': self.keyboard,
-                               'attachment':attachment})
+                                'attachment': attachment})
 
     @staticmethod
     def current_keyboard():
-        keyboard = VkKeyboard(one_time=True)
-        keyboard.add_button('Показать далее', color=VkKeyboardColor.PRIMARY)
+        keyboard = VkKeyboard(one_time=False)
+        keyboard.add_button('Показать', color=VkKeyboardColor.PRIMARY)
         keyboard.add_line()
         keyboard.add_button('Добавить в избранное', color=VkKeyboardColor.POSITIVE)
         keyboard.add_button('Не нравится', color=VkKeyboardColor.NEGATIVE)
         keyboard.add_line()
-        keyboard.add_button('Показать список избранных', color=VkKeyboardColor.SECONDARY)
+        keyboard.add_button('Список избранных', color=VkKeyboardColor.SECONDARY)
+        keyboard.add_button('Черный список', color=VkKeyboardColor.SECONDARY)
         return keyboard.get_keyboard()
-
