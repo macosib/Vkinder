@@ -15,6 +15,7 @@ class VkApi:
             'v': '5.131'
         }
         self.offset = 0
+        self.wish_list = []
 
     @staticmethod
     def _access_code():
@@ -73,35 +74,9 @@ class VkApi:
         else:
             return self._access_token()
 
-    def search_user(self, city, sex, birth_year, count=1):
-        self.offset += count
-        match_person = []
-        endpoint = f'{config.base_url}users.search'
-        params = {
-            'count': count,
-            'sex': sex,
-            'birth_year': birth_year,
-            'has_photo': 1,
-            'hometown': city,
-            'offset': self.offset
-        }
-        response = requests.get(url=endpoint, params={**params, **self.params})
-        result = response.json()['response']['items']
-        for person in result:
-            if person['is_closed'] is True:
-                continue
-            photo_profile = self.get_photos_from_profile(person['id'])
-            match_info = [
-                person['first_name'],
-                person['last_name'],
-                f'{config.base_profile_url}{person["id"]}',
-                photo_profile
-            ]
-            match_person.append(match_info)
-        return match_person
-
     # def search_user(self, city, sex, birth_year, count=1):
-    #     print(city, birth_year, sex)
+    #     self.offset += count
+    #     match_person = []
     #     endpoint = f'{config.base_url}users.search'
     #     params = {
     #         'count': count,
@@ -111,18 +86,40 @@ class VkApi:
     #         'hometown': city,
     #         'offset': self.offset
     #     }
-    #     while True:
-    #         print(self.offset)
-    #         self.offset += count
-    #         response = requests.get(url=endpoint, params={**params, **self.params})
-    #         print(response.json())
-    #         sleep(0.33)
-    #         person = response.json()['response']['items'][0]
-    #         print(person)
+    #     response = requests.get(url=endpoint, params={**params, **self.params})
+    #     result = response.json()['response']['items']
+    #     for person in result:
     #         if person['is_closed'] is True:
     #             continue
     #         photo_profile = self.get_photos_from_profile(person['id'])
-    #         return person['first_name'], person['last_name'], f'{config.base_profile_url}{person["id"]}', photo_profile
+    #         match_info = [
+    #             person['first_name'],
+    #             person['last_name'],
+    #             f'{config.base_profile_url}{person["id"]}',
+    #             photo_profile
+    #         ]
+    #         match_person.append(match_info)
+    #     return match_person
+
+    def search_user(self, city, sex, birth_year, count=1):
+        endpoint = f'{config.base_url}users.search'
+        while True:
+            self.offset += count
+            params = {
+                'count': count,
+                'sex': sex,
+                'birth_year': birth_year,
+                'has_photo': 1,
+                'hometown': city,
+                'offset': self.offset
+            }
+            response = requests.get(url=endpoint, params={**params, **self.params})
+            sleep(0.33)
+            person = response.json()['response']['items'][0]
+            if person['is_closed'] is True:
+                continue
+            photo_profile = self.get_photos_from_profile(person['id'])
+            return person['first_name'], person['last_name'], f'{config.base_profile_url}{person["id"]}', photo_profile
 
 
     def get_user_info(self, user_id):
@@ -144,7 +141,10 @@ class VkApi:
         if data.get('sex', None) is None:
             sex = randint(0, 2)
         else:
-            sex = data.get('sex')
+            if data.get('sex') == 2:
+                sex = 1
+            else:
+                sex = 2
         return city, sex, bdate
 
     def get_photos_from_profile(self, user_id):
