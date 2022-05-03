@@ -14,7 +14,7 @@ class VkApi:
             'access_token': self.token,
             'v': '5.131'
         }
-        self.offset = 0
+        self.offset = randint(0, 100)
         self.wish_list = []
         self.black_list = []
 
