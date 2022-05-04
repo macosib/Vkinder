@@ -3,9 +3,7 @@ import requests
 import config
 import webbrowser
 from random import randint
-import models
 from models import Session, engine
-
 import models
 
 

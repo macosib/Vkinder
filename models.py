@@ -48,7 +48,7 @@ class FavoriteUser(Base):
     bot_user_vk_id = sql.Column(sql.Integer, sql.ForeignKey('bot_user.bot_user_vk_id', ondelete='CASCADE'))
 
     def __repr__(self):
-        return f'{self.vk_user_first_name} {self.vk_user_last_name}\n{self.vk_user_url}'
+        return f'{self.vk_user_first_name} {self.vk_user_last_name} {self.vk_user_url}'
 
 
 class BlackList(Base):
@@ -67,7 +67,7 @@ class BlackList(Base):
     bot_user_vk_id = sql.Column(sql.Integer, sql.ForeignKey('bot_user.bot_user_vk_id', ondelete='CASCADE'))
 
     def __repr__(self):
-        return f'{self.vk_user_first_name} {self.vk_user_last_name}\n{self.vk_user_url}'
+        return f'{self.vk_user_first_name} {self.vk_user_last_name} {self.vk_user_url}'
 
 
 class VkUserPhoto(Base):
