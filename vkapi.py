@@ -18,8 +18,7 @@ class VkApi:
             'access_token': self.token,
             'v': '5.131'
         }
-        # self.offset = randint(0, 100)
-        self.offset = 0
+        self.offset = randint(0, 200)
         self.wish_list = []
         self.black_list = []
 
@@ -100,7 +99,7 @@ class VkApi:
             session = Session()
             connection = engine.connect()
             if session.query(models.BlackList.vk_user_id).filter_by(vk_user_id=person["id"]).first() is not None:
-                print('ЕСТЬ В БАЗЕ')
+                print('В черном списке')
                 continue
             photo_profile = self.get_photos_from_profile(person['id'])
             return person['first_name'], person['last_name'], f'{config.base_profile_url}{person["id"]}', photo_profile

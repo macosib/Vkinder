@@ -39,15 +39,16 @@ class FavoriteUser(Base):
     __tablename__ = 'favorites_list'
     id_favorites = sql.Column(sql.Integer, primary_key=True, autoincrement=True, nullable=False)
     vk_user_id = sql.Column(sql.Integer, unique=True, nullable=False)
-    # vk_user_first_name = sql.Column(sql.String)
-    # vk_user_last_name = sql.Column(sql.String)
+    vk_user_first_name = sql.Column(sql.String)
+    vk_user_last_name = sql.Column(sql.String)
+    vk_user_url = sql.Column(sql.String)
     # vk_user_city = sql.Column(sql.String)
     # vk_user_bdate = sql.Column(sql.String)
     # vk_user_sex = sql.Column(sql.String)
     bot_user_vk_id = sql.Column(sql.Integer, sql.ForeignKey('bot_user.bot_user_vk_id', ondelete='CASCADE'))
 
     def __repr__(self):
-        return f'{self.id_favorites} {self.vk_user_id} {self.id_bot_user}'
+        return f'{self.vk_user_first_name} {self.vk_user_last_name}\n{self.vk_user_url}'
 
 
 class BlackList(Base):
@@ -57,15 +58,16 @@ class BlackList(Base):
     __tablename__ = 'black_list'
     id_black_list = sql.Column(sql.Integer, primary_key=True, autoincrement=True, nullable=False)
     vk_user_id = sql.Column(sql.Integer, unique=True, nullable=False)
-    # vk_user_first_name = sql.Column(sql.String)
-    # vk_user_last_name = sql.Column(sql.String)
+    vk_user_first_name = sql.Column(sql.String)
+    vk_user_last_name = sql.Column(sql.String)
+    vk_user_url = sql.Column(sql.String)
     # vk_user_city = sql.Column(sql.String)
     # vk_user_bdate = sql.Column(sql.String)
     # vk_user_sex = sql.Column(sql.String)
     bot_user_vk_id = sql.Column(sql.Integer, sql.ForeignKey('bot_user.bot_user_vk_id', ondelete='CASCADE'))
 
     def __repr__(self):
-        return f'{self.id_black_list} {self.vk_user_id} {self.id_bot_user}'
+        return f'{self.vk_user_first_name} {self.vk_user_last_name}\n{self.vk_user_url}'
 
 
 class VkUserPhoto(Base):
@@ -75,7 +77,8 @@ class VkUserPhoto(Base):
     __tablename__ = 'vk_user_photo'
     id_photo = sql.Column(sql.Integer, primary_key=True, autoincrement=True, nullable=False)
     photo_name = sql.Column(sql.String, unique=True, nullable=False)
-    vk_user_id = sql.Column(sql.Integer, sql.ForeignKey('favorites_list.vk_user_id', ondelete='CASCADE'))
+    # vk_user_id = sql.Column(sql.Integer, sql.ForeignKey('favorites_list.vk_user_id', ondelete='CASCADE'))
+    vk_user_id = sql.Column(sql.Integer, nullable=True)
 
     def __repr__(self):
         return f'{self.id_photo} {self.photo_name} {self.vk_user_id}'
@@ -109,12 +112,13 @@ def check_if_bot_user_exists(id_vk):
     return new_entry
 
 
-def add_new_match_to_favorites(vk_user_id, bot_user_vk_id):
+def add_new_match_to_favorites(vk_user_id, bot_user_vk_id, first_name, last_name, vk_user_url):
     """
     Adds new match to favorites list in accordance with user's request
     :param vk_user_id: int
     :param first_name: str
     :param last_name: str
+    :param vk_user_url: str
     :param city: str
     :param bdate: str
     :param sex: str
@@ -125,8 +129,9 @@ def add_new_match_to_favorites(vk_user_id, bot_user_vk_id):
         return False
     new_entry = FavoriteUser(
         vk_user_id=vk_user_id,
-        # vk_user_first_name=first_name,
-        # vk_user_last_name=last_name,
+        vk_user_first_name=first_name,
+        vk_user_last_name=last_name,
+        vk_user_url=vk_user_url,
         # vk_user_city=city,
         # vk_user_bdate=bdate,
         # vk_user_sex=sex,
@@ -137,12 +142,13 @@ def add_new_match_to_favorites(vk_user_id, bot_user_vk_id):
     return True
 
 
-def add_new_match_to_black_list(vk_user_id, bot_user_vk_id):
+def add_new_match_to_black_list(vk_user_id, bot_user_vk_id, first_name, last_name, vk_user_url):
     """
     Adds new match to black list in accordance with user's request
     :param vk_user_id: int
     :param first_name: str
     :param last_name: str
+    :param vk_user_url: str
     :param city: str
     :param bdate: str
     :param sex: str
@@ -153,8 +159,9 @@ def add_new_match_to_black_list(vk_user_id, bot_user_vk_id):
         return False
     new_entry = BlackList(
         vk_user_id=vk_user_id,
-        # vk_user_first_name=first_name,
-        # vk_user_last_name=last_name,
+        vk_user_first_name=first_name,
+        vk_user_last_name=last_name,
+        vk_user_url=vk_user_url,
         # vk_user_city=city,
         # vk_user_bdate=bdate,
         # vk_user_sex=sex,
@@ -213,25 +220,36 @@ def add_photo_of_the_match(photo_name, vk_user_id):
     return True
 
 
-def show_all_favorites(id_):
+def show_all_favorites():
     """
     Shows all favorite users of current bot user
     :param id_: int
     :return: list of favorite users
     """
-    bot_user = session.query(BotUser).filter_by(bot_user_vk_id=id_).first()
-    all_favorites = session.query(FavoriteUser).filter_by(id_bot_user=bot_user.id_bot_user).all()
+    all_favorites = session.query(FavoriteUser.vk_user_first_name,
+                                  FavoriteUser.vk_user_last_name,
+                                  FavoriteUser.vk_user_url,
+                                  VkUserPhoto.photo_name
+                                  ).join(VkUserPhoto,
+                                         VkUserPhoto.vk_user_id == FavoriteUser.vk_user_id).filter(
+        FavoriteUser.vk_user_id == VkUserPhoto.vk_user_id).all()
+
     return all_favorites
 
 
-def show_all_blacklisted(id_):
+def show_all_blacklisted():
     """
     Shows all blacklisted users of current bot user
     :param id_: int
     :return: list of blacklisted users
     """
-    bot_user = session.query(BotUser).filter_by(bot_user_vk_id=id_).first()
-    all_blacklisted = session.query(BlackList).filter_by(id_bot_user=bot_user.id_bot_user).all()
+    all_blacklisted = session.query(BlackList.vk_user_first_name,
+                                    BlackList.vk_user_last_name,
+                                    BlackList.vk_user_url,
+                                    VkUserPhoto.photo_name
+                                    ).join(VkUserPhoto,
+                                           VkUserPhoto.vk_user_id == BlackList.vk_user_id).filter(
+        BlackList.vk_user_id == VkUserPhoto.vk_user_id).all()
     return all_blacklisted
 
 
