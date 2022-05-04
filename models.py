@@ -11,7 +11,7 @@ Creating a database tables in accordance with a flowchart
 Base = declarative_base()
 
 # an Engine, which the Session will use for connection
-engine = sql.create_engine("postgresql://postgres:Mimishka20@localhost:5432/vKinder_bot_db")
+engine = sql.create_engine("postgresql://postgres:YOURPASSWORD@localhost:5432/vKinder_bot_db")
 
 # create a configured "Session" class
 Session = sessionmaker(bind=engine)
@@ -37,11 +37,11 @@ class FavoriteUser(Base):
     __tablename__ = 'favorites_list'
     id_favorites = sql.Column(sql.Integer, primary_key=True, autoincrement=True, nullable=False)
     vk_user_id = sql.Column(sql.Integer, unique=True, nullable=False)
-    vk_user_first_name = sql.Column(sql.String)
-    vk_user_last_name = sql.Column(sql.String)
-    vk_user_city = sql.Column(sql.String)
-    vk_user_bdate = sql.Column(sql.String)
-    vk_user_sex = sql.Column(sql.String)
+    # vk_user_first_name = sql.Column(sql.String)
+    # vk_user_last_name = sql.Column(sql.String)
+    # vk_user_city = sql.Column(sql.String)
+    # vk_user_bdate = sql.Column(sql.String)
+    # vk_user_sex = sql.Column(sql.String)
     id_bot_user = sql.Column(sql.Integer, sql.ForeignKey('bot_user.id_bot_user', ondelete='CASCADE'))
 
 
@@ -52,11 +52,11 @@ class BlackList(Base):
     __tablename__ = 'black_list'
     id_black_list = sql.Column(sql.Integer, primary_key=True, autoincrement=True, nullable=False)
     vk_user_id = sql.Column(sql.Integer, unique=True, nullable=False)
-    vk_user_first_name = sql.Column(sql.String)
-    vk_user_last_name = sql.Column(sql.String)
-    vk_user_city = sql.Column(sql.String)
-    vk_user_bdate = sql.Column(sql.String)
-    vk_user_sex = sql.Column(sql.String)
+    # vk_user_first_name = sql.Column(sql.String)
+    # vk_user_last_name = sql.Column(sql.String)
+    # vk_user_city = sql.Column(sql.String)
+    # vk_user_bdate = sql.Column(sql.String)
+    # vk_user_sex = sql.Column(sql.String)
     id_bot_user = sql.Column(sql.Integer, sql.ForeignKey('bot_user.id_bot_user', ondelete='CASCADE'))
 
 
@@ -98,7 +98,7 @@ def check_if_bot_user_exists(id_vk):
     return new_entry
 
 
-def add_new_match_to_favorites(vk_user_id, first_name, last_name, city, bdate, sex, id_bot_user):
+def add_new_match_to_favorites(vk_user_id, id_bot_user):
     """
     Adds new match to favorites list in accordance with user's request
     :param vk_user_id: int
@@ -112,11 +112,11 @@ def add_new_match_to_favorites(vk_user_id, first_name, last_name, city, bdate, s
     """
     new_entry = FavoriteUser(
         vk_user_id=vk_user_id,
-        vk_user_first_name=first_name,
-        vk_user_last_name=last_name,
-        vk_user_city=city,
-        vk_user_bdate=bdate,
-        vk_user_sex=sex,
+        # vk_user_first_name=first_name,
+        # vk_user_last_name=last_name,
+        # vk_user_city=city,
+        # vk_user_bdate=bdate,
+        # vk_user_sex=sex,
         id_bot_user=id_bot_user
     )
     session.add(new_entry)
@@ -124,7 +124,7 @@ def add_new_match_to_favorites(vk_user_id, first_name, last_name, city, bdate, s
     return True
 
 
-def add_new_match_to_black_list(vk_user_id, first_name, last_name, city, bdate, sex, id_bot_user):
+def add_new_match_to_black_list(vk_user_id, id_bot_user):
     """
     Adds new match to black list in accordance with user's request
     :param vk_user_id: int
@@ -138,11 +138,11 @@ def add_new_match_to_black_list(vk_user_id, first_name, last_name, city, bdate, 
     """
     new_entry = FavoriteUser(
         vk_user_id=vk_user_id,
-        vk_user_first_name=first_name,
-        vk_user_last_name=last_name,
-        vk_user_city=city,
-        vk_user_bdate=bdate,
-        vk_user_sex=sex,
+        # vk_user_first_name=first_name,
+        # vk_user_last_name=last_name,
+        # vk_user_city=city,
+        # vk_user_bdate=bdate,
+        # vk_user_sex=sex,
         id_bot_user=id_bot_user
     )
     session.add(new_entry)
