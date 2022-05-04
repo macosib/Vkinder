@@ -29,10 +29,10 @@ def main():
         nonlocal flag_wish
         nonlocal flag_black
         if len(stack) == 0 or (flag and not flag_wish):
-            vk_bot.send_msg(event.user_id, "Добавлять нечего")
+            vk_bot.send_msg(event.user_id, "Добавлять некого")
             return False
         elif len(stack) == 0 or (not flag is None and not flag_black):
-            vk_bot.send_msg(event.user_id, "Добавлять нечего")
+            vk_bot.send_msg(event.user_id, "Добавлять некого")
             return False
         data = stack.pop()
         first_name, last_name, url = data[0], data[1], data[2]
@@ -61,8 +61,10 @@ def main():
                         vk_bot.send_msg(event.user_id, message=msg, attachment=user[3])
                 elif message == "добавить в избранное":
                     add_user_to_db(event.user_id, True)
+                    vk_bot.send_msg(event.user_id, message='Добавил в избранное')
                 elif message == "не нравится":
                     add_user_to_db(event.user_id, False)
+                    vk_bot.send_msg(event.user_id, message='Добавил в черный список')
                 elif message == "показать":
                     data = get_user_for_bot(event.user_id)
                     msg = f'{data[0]} {data[1]}\n{data[2]}'
