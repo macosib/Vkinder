@@ -2,7 +2,6 @@ import sqlalchemy as sql
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from pprint import pprint
 
 """
 Creating a database tables in accordance with a flowchart
@@ -12,7 +11,7 @@ Creating a database tables in accordance with a flowchart
 Base = declarative_base()
 
 # an Engine, which the Session will use for connection
-engine = sql.create_engine("postgresql://postgres:YOUR_PASSWORD@localhost:5432/vKinder_bot_db")
+engine = sql.create_engine("postgresql://postgres:Mimishka20@localhost:5432/vKinder_bot_db")
 
 # create a configured "Session" class
 Session = sessionmaker(bind=engine)
@@ -22,20 +21,18 @@ session = Session()
 connection = engine.connect()
 
 
-# creating a table for a bot user
 class BotUser(Base):
     """
-
+    Class BotUser creates a table "bot_user" in database "vKinder_bot_db"
     """
     __tablename__ = "bot_user"
     id_bot_user = sql.Column(sql.Integer, primary_key=True, autoincrement=True, nullable=False)
     bot_user_vk_id = sql.Column(sql.Integer, unique=True, nullable=False)
 
 
-# creating a table for a match user
 class FavoriteUser(Base):
     """
-
+    Class FavoriteUser creates a table "favorites_list" in database "vKinder_bot_db"
     """
     __tablename__ = 'favorites_list'
     id_favorites = sql.Column(sql.Integer, primary_key=True, autoincrement=True, nullable=False)
@@ -48,10 +45,9 @@ class FavoriteUser(Base):
     id_bot_user = sql.Column(sql.Integer, sql.ForeignKey('bot_user.id_bot_user', ondelete='CASCADE'))
 
 
-# creating a table for a blacklisted accounts
 class BlackList(Base):
     """
-
+    Class Blacklist creates a table "black_list" in database "vKinder_bot_db"
     """
     __tablename__ = 'black_list'
     id_black_list = sql.Column(sql.Integer, primary_key=True, autoincrement=True, nullable=False)
@@ -64,24 +60,21 @@ class BlackList(Base):
     id_bot_user = sql.Column(sql.Integer, sql.ForeignKey('bot_user.id_bot_user', ondelete='CASCADE'))
 
 
-# creating a table for a photo information
 class VkUserPhoto(Base):
     """
-
+    Class VkUserPhoto creates a table "vk_user_photo" in database "vKinder_bot_db"
     """
     __tablename__ = 'vk_user_photo'
     id_photo = sql.Column(sql.Integer, primary_key=True, autoincrement=True, nullable=False)
-    photo_likes_count = sql.Column(sql.Integer, unique=False)
-    photo_URL = sql.Column(sql.Integer, unique=True, nullable=False)
+    photo_name = sql.Column(sql.String, unique=True, nullable=False)
     vk_user_id = sql.Column(sql.Integer, sql.ForeignKey('favorites_list.vk_user_id', ondelete='CASCADE'))
 
 
 """
-Creating a functions to work with database
+Functions to work with database
 """
 
 
-# adds new bot user
 def add_bot_user(id_vk):
     """
     Adds new bot user to database 'vKinder_bot_db'
@@ -96,18 +89,15 @@ def add_bot_user(id_vk):
     return True
 
 
-# checks if bot user already in database
 def check_if_bot_user_exists(id_vk):
     """
     Checks if bot user already exists in database 'vKinder_bot_db'
     :param id_vk: int
-    :return: Boolean
     """
     new_entry = session.query(BotUser).filter_by(bot_user_vk_id=id_vk).first()
     return new_entry
 
 
-# adds new match to favorites list
 def add_new_match_to_favorites(vk_user_id, first_name, last_name, city, bdate, sex, id_bot_user):
     """
     Adds new match to favorites list in accordance with user's request
@@ -134,7 +124,6 @@ def add_new_match_to_favorites(vk_user_id, first_name, last_name, city, bdate, s
     return True
 
 
-# adds new match to black list
 def add_new_match_to_black_list(vk_user_id, first_name, last_name, city, bdate, sex, id_bot_user):
     """
     Adds new match to black list in accordance with user's request
@@ -161,19 +150,16 @@ def add_new_match_to_black_list(vk_user_id, first_name, last_name, city, bdate, 
     return True
 
 
-# deletes match from black list
 def delete_match_from_black_list(vk_id):
     """
     Deletes match from black list
     :param vk_id: int
-    :return: Boolean
     """
     new_entry = session.query(BlackList).filter_by(vk_user_id=vk_id).first()
     session.delete(new_entry)
     session.commit()
 
 
-# deletes match from favorites list
 def delete_match_from_favorites_list(vk_id):
     """
     Deletes match from favorites list
@@ -185,30 +171,26 @@ def delete_match_from_favorites_list(vk_id):
     session.commit()
 
 
-# checks if match already present in database (both black and favorites list)
 def check_if_match_exists(id_vk):
     """
     Checks if match already present in database (both black and favorites list)
     :param id_vk: int
-    :return: Boolean
     """
     favorite_list = session.query(FavoriteUser).filter_by(vk_user_id=id_vk).first()
     black_list = session.query(BlackList).filter_by(vk_user_id=id_vk).first()
     return favorite_list, black_list
 
 
-# adds photo of the match to photo table
-def add_photo_of_the_match(photo_likes_count, photo_url, vk_user_id):
+def add_photo_of_the_match(photo_name, vk_user_id):
     """
-
-    :param photo_likes_count:
-    :param photo_url:
-    :param vk_user_id:
-    :return:
+    Adds photo of matching user to a database photo-table
+    :param photo_likes_count: int
+    :param photo_url: str
+    :param vk_user_id: str
+    :return: Boolean
     """
     new_entry = VkUserPhoto(
-        photo_likes_count=photo_likes_count,
-        photo_URL=photo_url,
+        photo_name=photo_name,
         vk_user_id=vk_user_id,
     )
     session.add(new_entry)
@@ -216,24 +198,22 @@ def add_photo_of_the_match(photo_likes_count, photo_url, vk_user_id):
     return True
 
 
-# shows all favorite users of current bot user
 def show_all_favorites(id_):
     """
-
-    :param id_:
-    :return:
+    Shows all favorite users of current bot user
+    :param id_: int
+    :return: list of favorite users
     """
     bot_user = session.query(BotUser).filter_by(bot_user_vk_id=id_).first()
     all_favorites = session.query(FavoriteUser).filter_by(id_bot_user=bot_user.id_bot_user).all()
     return all_favorites
 
 
-# shows all blacklisted users of current bot user
 def show_all_blacklisted(id_):
     """
-
-    :param id_:
-    :return:
+    Shows all blacklisted users of current bot user
+    :param id_: int
+    :return: list of blacklisted users
     """
     bot_user = session.query(BotUser).filter_by(bot_user_vk_id=id_).first()
     all_blacklisted = session.query(BlackList).filter_by(id_bot_user=bot_user.id_bot_user).all()
