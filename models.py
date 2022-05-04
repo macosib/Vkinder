@@ -233,8 +233,6 @@ def show_all_favorites(vk_user_id):
                                   ).join(VkUserPhoto,
                                          VkUserPhoto.vk_user_id == FavoriteUser.vk_user_id).filter(
         vk_user_id == FavoriteUser.bot_user_vk_id).all()
-    print(all_favorites)
-    print(vk_user_id)
     return all_favorites
 
 
