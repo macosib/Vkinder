@@ -8,6 +8,9 @@ import models
 
 
 class VkApi:
+    """
+    Creates a class to work with API vkontakte
+    """
 
     def __init__(self):
         self.token = self._check_valid_token()
@@ -22,6 +25,10 @@ class VkApi:
 
     @staticmethod
     def _access_code():
+        """
+        Initialize the object's state.
+        Access_token and Version must be present in parameters
+        """
         endpoint = 'https://oauth.vk.com/authorize'
         params = {
             'client_id': config.app_id,
@@ -78,6 +85,17 @@ class VkApi:
             return self._access_token()
 
     def search_user(self, city, sex, birth_year, count=1):
+        """
+        Sends API get request with requests package, using vk API method users.search with following parameters:
+        'count', 'sex', 'birth_year', 'has_photo', 'has_photo',
+        'hometown', 'offset' to get the information about match.
+        If user profile is private, user is skipped to the next one.
+        If user is in black list, user is skipped to the next one.
+        Returns information about user in following format:
+        First name, Last name
+        Profile link
+        three photos as attachments, taken from method get_photos_from_profile()
+        """
         endpoint = f'{config.base_url}users.search'
         while True:
             self.offset += count
@@ -103,6 +121,14 @@ class VkApi:
             return person['first_name'], person['last_name'], f'{config.base_profile_url}{person["id"]}', photo_profile
 
     def get_user_info(self, user_id):
+        """
+        Sends API get request with requests package, using vk API method users.get with following parameters:
+        'user_ids', 'fields': 'bdate, sex, home_town', 'city' to get the information about bot user.
+        If city information is missing, Moscow is used by default.
+        If bdate information is missing, it generates randomly using randint.
+        If sex information is missing, it generates randomly using randint.
+        Returns city, sex, bdate of bot user.
+        """
         endpoint = f'{config.base_url}users.get'
         params = {
             'user_ids': user_id,
