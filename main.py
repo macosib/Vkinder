@@ -17,14 +17,15 @@ def main():
     flag_black = False
 
     def get_user_for_bot(user_id):
-        # Проверка
         city_search, sex_search, bdate_search = vk_api.get_user_info(user_id)
         user_for_bot = vk_api.search_user(city_search, sex_search, bdate_search)
         # Проверяем, если пользователь есть в базе данных
-        if user_id == models.check_if_bot_user_exists(user_id) is False:
+        if models.check_if_bot_user_exists(user_id) is None:
             # Добавляем пользователя бота в базу данных
             models.add_bot_user(user_id)
         return f'{user_for_bot[0]} {user_for_bot[1]}\n{user_for_bot[2]}', user_for_bot[3]
+
+
 
     for event in vk_bot.longpoll.listen():
         if event.type == VkEventType.MESSAGE_NEW:
@@ -42,16 +43,18 @@ def main():
                     if len(stack) == 0 or not flag_wish:
                         vk_bot.send_msg(event.user_id, "Добавлять нечего")
                     else:
-                        vk_api.wish_list.append(stack.pop())
+                        data = stack.pop()
                         flag_wish = True
-                        vk_bot.send_msg(event.user_id, f"Добавил в список избранных")
+                        user_id = int(data[0].split('id')[1])
+                        print(models.add_new_match_to_favorites(user_id, event.user_id))
                 elif message == "не нравится":
                     if len(stack) == 0 or not flag_black:
                         vk_bot.send_msg(event.user_id, "Добавлять нечего")
                     else:
-                        vk_api.black_list.append(stack.pop())
-                        flag_black = True
-                        vk_bot.send_msg(event.user_id, f"Добавил в черный список")
+                        data = stack.pop()
+                        flag_wish = True
+                        user_id = int(data[0].split('id')[1])
+                        print(models.add_new_match_to_black_list(user_id, event.user_id))
                 elif message == "показать":
                     data = get_user_for_bot(event.user_id)
                     stack.append(data)

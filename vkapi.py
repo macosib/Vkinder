@@ -3,6 +3,10 @@ import requests
 import config
 import webbrowser
 from random import randint
+import models
+from models import Session, engine
+
+import models
 
 
 class VkApi:
@@ -14,9 +18,13 @@ class VkApi:
             'access_token': self.token,
             'v': '5.131'
         }
-        self.offset = 30
+        # self.offset = randint(0, 100)
+        self.offset = 0
+        self.wish_list = []
+        self.black_list = []
 
-    def _access_code(self):
+    @staticmethod
+    def _access_code():
         endpoint = 'https://oauth.vk.com/authorize'
         params = {
             'client_id': config.app_id,
@@ -36,6 +44,7 @@ class VkApi:
             return code
         except:
             print('Ошибка при получении кода')
+            return
 
     def _access_token(self):
         endpoint = 'https://oauth.vk.com/access_token'
@@ -71,87 +80,30 @@ class VkApi:
         else:
             return self._access_token()
 
-    # Альтернативный вариант для обсуждения. Запрос к АПИ, для поиска юзеров, город отображается корректно,
-    # но у меня с оффсет всегда выдает одинаковые результаты почему-то
-    # ________________________________________________________
-    def search_users(self, sex, birth_year, city, count=1):
-        self.offset += count
-        match_person = []
+    def search_user(self, city, sex, birth_year, count=1):
         endpoint = f'{config.base_url}users.search'
-        params = {
-            'count': count,
-            'sex': sex,
-            'birth_year': birth_year,
-            'has_photo': 1,
-            'hometown': city,
-            'offset': self.offset
-        }
-        response = requests.get(url=endpoint, params={**params, **self.params}).json()['response']
-        result = response['items']
-        base_profile_url = "https://vk.com/id"
-        for person in result:
+        while True:
+            self.offset += count
+            params = {
+                'count': count,
+                'sex': sex,
+                'birth_year': birth_year,
+                'has_photo': 1,
+                'hometown': city,
+                'offset': self.offset
+            }
+            response = requests.get(url=endpoint, params={**params, **self.params})
+            sleep(0.33)
+            person = response.json()['response']['items'][0]
             if person['is_closed'] is True:
                 continue
-            match_info = [
-                person['first_name'],
-                person['last_name'],
-                base_profile_url + str(person['id']),
-            ]
-            match_person.append(match_info)
-        return match_person
-    # ________________________________________________________
-
-    def _get_city_id(self, city_name):
-        endpoint = f'{config.base_url}database.getCities'
-        params = {
-            'country_id': '1',
-            'q': city_name,
-            'count': 1
-        }
-        response = requests.get(url=endpoint, params={**params, **self.params})
-        print(response.json())
-        sleep(0.33)
-        return response.json()['response']['items'][0]['id']
-
-    def users_search_res(self, search_result, city):
-        result = []
-        for person in search_result['response']['items']:
-            if person['is_closed'] is True \
-                    or person.get('city') is None\
-                    or person.get('city').get('title') != city:
+            session = Session()
+            connection = engine.connect()
+            if session.query(models.BlackList.vk_user_id).filter_by(vk_user_id=person["id"]).first() is not None:
+                print('ЕСТЬ В БАЗЕ')
                 continue
-            result.append({
-                'first_name': person.get('first_name'),
-                'last_name': person.get('last_name'),
-                'person_id': person.get('id'),
-                'city_title': person.get('home_town'),
-                'sex': person.get('sex'),
-                'bdate': person.get('bdate'),
-                'profile_foto': self.get_photos_from_profile(person.get('id'))
-            })
-        return result
-
-    def users_search(self, city, sex, birth_year, count=1):
-        endpoint = f'{config.base_url}users.search'
-        params = {
-            'offset': self.offset,
-            'count': count,
-            'city': self._get_city_id(city),
-            'sex': sex,
-            'birth_year': birth_year,
-            'has_photo': 1,
-            'fields': 'sex, bdate, city'
-        }
-
-        try:
-            response = requests.get(url=endpoint, params={**params, **self.params})
-            response.raise_for_status()
-            if response.status_code != 200:
-                raise Exception()
-            self.offset += count
-            return self.users_search_res(response.json(), city)
-        except:
-            print('Ошибка при поиске пользователей')
+            photo_profile = self.get_photos_from_profile(person['id'])
+            return person['first_name'], person['last_name'], f'{config.base_profile_url}{person["id"]}', photo_profile
 
     def get_user_info(self, user_id):
         endpoint = f'{config.base_url}users.get'
@@ -172,22 +124,15 @@ class VkApi:
         if data.get('sex', None) is None:
             sex = randint(0, 2)
         else:
-            sex = data.get('sex')
+            if data.get('sex') == 2:
+                sex = 1
+            else:
+                sex = 2
         return city, sex, bdate
-
-    def _max_size_foto_filter(self, photos):
-        result = []
-        for foto in sorted(photos.json()['response']['items'], key=lambda x: x['likes']['count'], reverse=True):
-            result.append({'foto_id': foto['id'],
-                           'owner_id': foto['owner_id'],
-                           'likes': foto['likes']['count'],
-                           'url': foto['sizes'][-1]['url']})
-            if len(result) == 3:
-                break
-        return result
 
     def get_photos_from_profile(self, user_id):
         sleep(0.33)
+        result = []
         endpoint = f'{config.base_url}photos.get'
         params = {
             'owner_id': user_id,
@@ -199,12 +144,10 @@ class VkApi:
             response.raise_for_status()
             if response.status_code != 200:
                 raise Exception()
-            return self._max_size_foto_filter(response)
+            for foto in sorted(response.json()['response']['items'], key=lambda x: x['likes']['count'], reverse=True):
+                result.append(f"photo{foto['owner_id']}_{foto['id']}")
+                if len(result) == 3:
+                    break
+            return ','.join(result)
         except:
             print(f'Ошибка при получении фото профиля {user_id}')
-            return
-
-
-if __name__ == '__main__':
-    new_user = VkApi()
-    print(new_user.search_users(2, 1987, 'Ростов'))

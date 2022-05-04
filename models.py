@@ -2,7 +2,6 @@ import sqlalchemy as sql
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-
 """
 Creating a database tables in accordance with a flowchart
 """
@@ -11,7 +10,7 @@ Creating a database tables in accordance with a flowchart
 Base = declarative_base()
 
 # an Engine, which the Session will use for connection
-engine = sql.create_engine("postgresql://postgres:YOURPASSWORD@localhost:5432/vKinder_bot_db")
+engine = sql.create_engine("postgresql://postgres:4Fabregas15@localhost:5432/vKinder_bot_db")
 
 # create a configured "Session" class
 Session = sessionmaker(bind=engine)
@@ -29,6 +28,9 @@ class BotUser(Base):
     id_bot_user = sql.Column(sql.Integer, primary_key=True, autoincrement=True, nullable=False)
     bot_user_vk_id = sql.Column(sql.Integer, unique=True, nullable=False)
 
+    def __repr__(self):
+        return f'{self.id_bot_user} {self.bot_user_vk_id}'
+
 
 class FavoriteUser(Base):
     """
@@ -42,7 +44,10 @@ class FavoriteUser(Base):
     # vk_user_city = sql.Column(sql.String)
     # vk_user_bdate = sql.Column(sql.String)
     # vk_user_sex = sql.Column(sql.String)
-    id_bot_user = sql.Column(sql.Integer, sql.ForeignKey('bot_user.id_bot_user', ondelete='CASCADE'))
+    bot_user_vk_id = sql.Column(sql.Integer, sql.ForeignKey('bot_user.bot_user_vk_id', ondelete='CASCADE'))
+
+    def __repr__(self):
+        return f'{self.id_favorites} {self.vk_user_id} {self.id_bot_user}'
 
 
 class BlackList(Base):
@@ -57,7 +62,10 @@ class BlackList(Base):
     # vk_user_city = sql.Column(sql.String)
     # vk_user_bdate = sql.Column(sql.String)
     # vk_user_sex = sql.Column(sql.String)
-    id_bot_user = sql.Column(sql.Integer, sql.ForeignKey('bot_user.id_bot_user', ondelete='CASCADE'))
+    bot_user_vk_id = sql.Column(sql.Integer, sql.ForeignKey('bot_user.bot_user_vk_id', ondelete='CASCADE'))
+
+    def __repr__(self):
+        return f'{self.id_black_list} {self.vk_user_id} {self.id_bot_user}'
 
 
 class VkUserPhoto(Base):
@@ -68,6 +76,9 @@ class VkUserPhoto(Base):
     id_photo = sql.Column(sql.Integer, primary_key=True, autoincrement=True, nullable=False)
     photo_name = sql.Column(sql.String, unique=True, nullable=False)
     vk_user_id = sql.Column(sql.Integer, sql.ForeignKey('favorites_list.vk_user_id', ondelete='CASCADE'))
+
+    def __repr__(self):
+        return f'{self.id_photo} {self.photo_name} {self.vk_user_id}'
 
 
 """
@@ -98,7 +109,7 @@ def check_if_bot_user_exists(id_vk):
     return new_entry
 
 
-def add_new_match_to_favorites(vk_user_id, id_bot_user):
+def add_new_match_to_favorites(vk_user_id, bot_user_vk_id):
     """
     Adds new match to favorites list in accordance with user's request
     :param vk_user_id: int
@@ -107,9 +118,11 @@ def add_new_match_to_favorites(vk_user_id, id_bot_user):
     :param city: str
     :param bdate: str
     :param sex: str
-    :param id_bot_user: int
+    :param bot_user_vk_id: int
     :return: Boolean
     """
+    if check_if_match_exists(vk_user_id)[0] is not None:
+        return False
     new_entry = FavoriteUser(
         vk_user_id=vk_user_id,
         # vk_user_first_name=first_name,
@@ -117,14 +130,14 @@ def add_new_match_to_favorites(vk_user_id, id_bot_user):
         # vk_user_city=city,
         # vk_user_bdate=bdate,
         # vk_user_sex=sex,
-        id_bot_user=id_bot_user
+        bot_user_vk_id=bot_user_vk_id
     )
     session.add(new_entry)
     session.commit()
     return True
 
 
-def add_new_match_to_black_list(vk_user_id, id_bot_user):
+def add_new_match_to_black_list(vk_user_id, bot_user_vk_id):
     """
     Adds new match to black list in accordance with user's request
     :param vk_user_id: int
@@ -133,17 +146,19 @@ def add_new_match_to_black_list(vk_user_id, id_bot_user):
     :param city: str
     :param bdate: str
     :param sex: str
-    :param id_bot_user: int
+    :param bot_user_vk_id: int
     :return: Boolean
     """
-    new_entry = FavoriteUser(
+    if check_if_match_exists(vk_user_id)[1] is not None:
+        return False
+    new_entry = BlackList(
         vk_user_id=vk_user_id,
         # vk_user_first_name=first_name,
         # vk_user_last_name=last_name,
         # vk_user_city=city,
         # vk_user_bdate=bdate,
         # vk_user_sex=sex,
-        id_bot_user=id_bot_user
+        bot_user_vk_id=bot_user_vk_id
     )
     session.add(new_entry)
     session.commit()
@@ -176,8 +191,8 @@ def check_if_match_exists(id_vk):
     Checks if match already present in database (both black and favorites list)
     :param id_vk: int
     """
-    favorite_list = session.query(FavoriteUser).filter_by(vk_user_id=id_vk).first()
-    black_list = session.query(BlackList).filter_by(vk_user_id=id_vk).first()
+    favorite_list = session.query(FavoriteUser.vk_user_id).filter_by(vk_user_id=id_vk).first()
+    black_list = session.query(BlackList.vk_user_id).filter_by(vk_user_id=id_vk).first()
     return favorite_list, black_list
 
 
@@ -222,6 +237,3 @@ def show_all_blacklisted(id_):
 
 if __name__ == '__main__':
     Base.metadata.create_all(engine)
-
-
-
