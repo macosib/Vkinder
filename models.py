@@ -220,7 +220,7 @@ def add_photo_of_the_match(photo_name, vk_user_id):
     return True
 
 
-def show_all_favorites():
+def show_all_favorites(vk_user_id):
     """
     Shows all favorite users of current bot user
     :param id_: int
@@ -232,12 +232,13 @@ def show_all_favorites():
                                   VkUserPhoto.photo_name
                                   ).join(VkUserPhoto,
                                          VkUserPhoto.vk_user_id == FavoriteUser.vk_user_id).filter(
-        FavoriteUser.vk_user_id == VkUserPhoto.vk_user_id).all()
-
+        vk_user_id == FavoriteUser.bot_user_vk_id).all()
+    print(all_favorites)
+    print(vk_user_id)
     return all_favorites
 
 
-def show_all_blacklisted():
+def show_all_blacklisted(vk_user_id):
     """
     Shows all blacklisted users of current bot user
     :param id_: int
@@ -249,7 +250,7 @@ def show_all_blacklisted():
                                     VkUserPhoto.photo_name
                                     ).join(VkUserPhoto,
                                            VkUserPhoto.vk_user_id == BlackList.vk_user_id).filter(
-        BlackList.vk_user_id == VkUserPhoto.vk_user_id).all()
+        BlackList.bot_user_vk_id == vk_user_id).all()
     return all_blacklisted
 
 

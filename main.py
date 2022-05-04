@@ -52,11 +52,11 @@ def main():
                 if message == "привет":
                     vk_bot.send_msg(event.user_id, 'Привет, для начала работы нажми кнопку "Показать"')
                 elif message == "список избранных":
-                    for user in models.show_all_favorites():
+                    for user in models.show_all_favorites(event.user_id):
                         msg = f'{user[0]} {user[1]}\n{user[2]}'
                         vk_bot.send_msg(event.user_id, message=msg, attachment=user[3])
                 elif message == "черный список":
-                    for user in models.show_all_blacklisted():
+                    for user in models.show_all_blacklisted(event.user_id):
                         msg = f'{user[0]} {user[1]}\n{user[2]}'
                         vk_bot.send_msg(event.user_id, message=msg, attachment=user[3])
                 elif message == "добавить в избранное":

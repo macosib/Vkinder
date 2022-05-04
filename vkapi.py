@@ -106,16 +106,16 @@ class VkApi:
         endpoint = f'{config.base_url}users.get'
         params = {
             'user_ids': user_id,
-            'fields': 'bdate, sex, home_town'
+            'fields': 'bdate, sex, home_town, city'
         }
         response = requests.get(url=endpoint, params={**params, **self.params})
         data = response.json()['response'][0]
-        if data.get('home_town', None) is None:
+        if data.get('city', None) is None:
             city = 'Москва'
         else:
-            city = data.get('home_town')
+            city = data.get('city').get('title')
         if data.get('bdate', None) is None or len(data.get('bdate').split('.')) < 3:
-            bdate = randint(1980, 2000)
+            bdate = randint(1990, 2000)
         else:
             bdate = int(data.get('bdate').split('.')[2])
         if data.get('sex', None) is None:
