@@ -154,6 +154,12 @@ class VkApi:
         return city, sex, bdate
 
     def get_photos_from_profile(self, user_id):
+        """
+        Sends API get request with requests package, using vk API method photos.get with following parameters:
+        'owner_id', 'album_id', 'extended' to return additional fields (likes).
+        Method chooses the three user's photo with the most amount of likes.
+        Returns
+        """
         sleep(0.33)
         result = []
         endpoint = f'{config.base_url}photos.get'
