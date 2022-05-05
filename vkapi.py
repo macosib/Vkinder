@@ -19,7 +19,7 @@ class VkApi:
             'access_token': self.token,
             'v': '5.131'
         }
-        self.offset = randint(0, 200)
+        self.offset = randint(0, 50)
         self.wish_list = []
         self.black_list = []
 
@@ -108,6 +108,8 @@ class VkApi:
                 'offset': self.offset
             }
             response = requests.get(url=endpoint, params={**params, **self.params})
+            if not response.json()['response']['items']:
+                continue
             sleep(0.33)
             person = response.json()['response']['items'][0]
             if person['is_closed'] is True:
@@ -115,7 +117,6 @@ class VkApi:
             session = Session()
             connection = engine.connect()
             if session.query(models.BlackList.vk_user_id).filter_by(vk_user_id=person["id"]).first() is not None:
-                print('В черном списке')
                 continue
             photo_profile = self.get_photos_from_profile(person['id'])
             return person['first_name'], person['last_name'], f'{config.base_profile_url}{person["id"]}', photo_profile

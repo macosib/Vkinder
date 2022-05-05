@@ -186,7 +186,6 @@ def delete_match_from_favorites_list(vk_id):
     """
     Deletes match from favorites list
     :param vk_id: int
-    :return: Boolean
     """
     new_entry = session.query(FavoriteUser).filter_by(vk_user_id=vk_id).first()
     session.delete(new_entry)
@@ -197,6 +196,7 @@ def check_if_match_exists(id_vk):
     """
     Checks if match already present in database (both black and favorites list)
     :param id_vk: int
+    :return: Tuple
     """
     favorite_list = session.query(FavoriteUser.vk_user_id).filter_by(vk_user_id=id_vk).first()
     black_list = session.query(BlackList.vk_user_id).filter_by(vk_user_id=id_vk).first()
