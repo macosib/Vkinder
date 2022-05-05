@@ -1,3 +1,4 @@
+import logger
 import vkapi
 import vkbot
 from vk_api.longpoll import VkEventType
@@ -11,7 +12,7 @@ connection = engine.connect()
 
 def main():
     """
-
+    Receives a message from the user and sends a response message.
     """
     vk_bot = vkbot.VKBot()
     vk_api = vkapi.VkApi()
@@ -19,6 +20,7 @@ def main():
     flag_favorite = False
     flag_black = False
 
+    @logger.logger('log_file.txt')
     def get_user_for_bot(user_id):
         """
         Gets information about the user by his ID: city, sex, bdate.
@@ -36,9 +38,15 @@ def main():
             models.add_bot_user(user_id)
         return vk_api.search_user(city, sex, bdate)
 
-    def add_user_to_db(bot_user_id, flag_list=None):
+    @logger.logger('log_file.txt')
+    def add_user_to_db(bot_user_id, flag_list):
         """
-
+        Adds user information to favorites or black list.
+        flag_list True - adds user information to favorites list.
+        flag_list False - adds user information to black list.
+        :param bot_user_id: bot_user_id
+        :param flag_list: Boolean
+        :return: Boolean
         """
         nonlocal flag_favorite
         nonlocal flag_black

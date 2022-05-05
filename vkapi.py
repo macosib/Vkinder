@@ -5,6 +5,7 @@ import webbrowser
 from random import randint
 from models import Session, engine
 import models
+import logger
 
 
 class VkApi:
@@ -40,15 +41,15 @@ class VkApi:
         }
         try:
             response = requests.get(url=endpoint, params=params)
-            response.raise_for_status()
             if response.status_code != 200:
-                raise Exception()
+                raise ConnectionError
+        except ConnectionError:
+            logger.error_func(response.json())
+            print('Ошибка при получении кода')
+        else:
             webbrowser.open(response.url)
             code = input('Введите код с браузера: ').split('code=')[1]
             return code
-        except:
-            print('Ошибка при получении кода')
-            return
 
     def _access_token(self):
         endpoint = 'https://oauth.vk.com/access_token'
@@ -60,14 +61,15 @@ class VkApi:
         }
         try:
             response = requests.get(url=endpoint, params=params)
-            response.raise_for_status()
             if response.status_code != 200:
-                raise Exception()
+                raise ConnectionError
+        except ConnectionError:
+            logger.error_func(response.json())
+            print('Ошибка при получении токена')
+        else:
             with open('token.txt', 'w', encoding='utf-8') as file:
                 file.write(response.json()['access_token'])
             return response.json()['access_token']
-        except:
-            print('Ошибка при получении токена')
 
     def _check_valid_token(self):
         with open('token.txt', 'r', encoding='utf-8') as file:
@@ -107,13 +109,21 @@ class VkApi:
                 'hometown': city,
                 'offset': self.offset
             }
-            response = requests.get(url=endpoint, params={**params, **self.params})
-            if not response.json()['response']['items']:
+            try:
+                response = requests.get(url=endpoint, params={**params, **self.params})
+                if not response.json()['response']['items']:
+                    continue
+                if response.status_code != 200:
+                    raise ConnectionError
+            except ConnectionError:
+                logger.error_func(response.json())
+                sleep(0.33)
                 continue
-            sleep(0.33)
-            person = response.json()['response']['items'][0]
-            if person['is_closed'] is True:
-                continue
+            else:
+                person = response.json()['response']['items'][0]
+                if person['is_closed'] is True:
+                    sleep(0.33)
+                    continue
             session = Session()
             connection = engine.connect()
             if session.query(models.BlackList.vk_user_id).filter_by(vk_user_id=person["id"]).first() is not None:
@@ -135,24 +145,30 @@ class VkApi:
             'user_ids': user_id,
             'fields': 'bdate, sex, home_town, city'
         }
-        response = requests.get(url=endpoint, params={**params, **self.params})
-        data = response.json()['response'][0]
-        if data.get('city', None) is None:
-            city = 'Москва'
+        try:
+            response = requests.get(url=endpoint, params={**params, **self.params})
+            if response.status_code != 200:
+                raise ConnectionError
+        except ConnectionError:
+            logger.error_func(response.json())
         else:
-            city = data.get('city').get('title')
-        if data.get('bdate', None) is None or len(data.get('bdate').split('.')) < 3:
-            bdate = randint(1990, 2000)
-        else:
-            bdate = int(data.get('bdate').split('.')[2])
-        if data.get('sex', None) is None:
-            sex = randint(0, 2)
-        else:
-            if data.get('sex') == 2:
-                sex = 1
+            data = response.json()['response'][0]
+            if data.get('city', None) is None:
+                city = 'Москва'
             else:
-                sex = 2
-        return city, sex, bdate
+                city = data.get('city').get('title')
+            if data.get('bdate', None) is None or len(data.get('bdate').split('.')) < 3:
+                bdate = randint(1990, 2000)
+            else:
+                bdate = int(data.get('bdate').split('.')[2])
+            if data.get('sex', None) is None:
+                sex = randint(0, 2)
+            else:
+                if data.get('sex') == 2:
+                    sex = 1
+                else:
+                    sex = 2
+            return city, sex, bdate
 
     def get_photos_from_profile(self, user_id):
         """
@@ -173,11 +189,12 @@ class VkApi:
             response = requests.get(endpoint, params={**self.params, **self.params, **params})
             response.raise_for_status()
             if response.status_code != 200:
-                raise Exception()
+                raise ConnectionError
             for foto in sorted(response.json()['response']['items'], key=lambda x: x['likes']['count'], reverse=True):
                 result.append(f"photo{foto['owner_id']}_{foto['id']}")
                 if len(result) == 3:
                     break
             return ','.join(result)
-        except:
-            print(f'Ошибка при получении фото профиля {user_id}')
+        except ConnectionError:
+            logger.error_func(response.json())
+
