@@ -58,14 +58,19 @@ def main():
             return False
         first_name, last_name, url, user_attachment = stack.pop()
         vk_user_id = int(url.split('id')[1])
-        models.add_photo_of_the_match(user_attachment, vk_user_id)
-        if flag_list:
+        if flag_list and models.check_if_match_exists(vk_user_id)[0] is None:
+            print('1')
             flag_favorite = False
             models.add_new_match_to_favorites(vk_user_id, bot_user_id, first_name, last_name, url)
-        else:
+            models.add_photo_of_the_match(user_attachment, vk_user_id)
+            return True
+        elif not flag_list and models.check_if_match_exists(vk_user_id)[1] is None:
+            print('2')
             flag_black = False
             models.add_new_match_to_black_list(vk_user_id, bot_user_id, first_name, last_name, url)
-        return True
+            models.add_photo_of_the_match(user_attachment, vk_user_id)
+            return True
+        return False
 
     for event in vk_bot.longpoll.listen():
         if event.type == VkEventType.MESSAGE_NEW:

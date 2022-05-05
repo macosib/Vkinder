@@ -202,7 +202,6 @@ def check_if_match_exists(id_vk):
     black_list = session.query(BlackList.vk_user_id).filter_by(vk_user_id=id_vk).first()
     return favorite_list, black_list
 
-
 def add_photo_of_the_match(photo_name, vk_user_id):
     """
     Adds photo of matching user to a database photo-table
